@@ -33,8 +33,8 @@ describe("mint-lbx", () => {
     program.programId
   );
 
-  const mint = new PublicKey("BYUYJErXBbZiZTBDi5hxqUEmj7JdrjEuTLmYVhpi2CUX");
-  const userTokenAccount = new PublicKey("GgnuKXCT98PPdPxRbHD7jZ9mMccTdddABrtXx9eypyLT");
+  const mint = new PublicKey("HUShvmkvCxXhdMH6A3EG4yyvDeqRbhYR7uXef5kFTw7G");
+  const userTokenAccount = new PublicKey("35gJ1qNrTxDTWne8FFTmdXFcovwoz6XDWe9sciheYe8W");
 
   it("Initialize config", async () => {
     const configAccount = await provider.connection.getAccountInfo(configPda);
@@ -69,7 +69,7 @@ describe("mint-lbx", () => {
   });
 
   it("Deposit SOL and mint LBX", async () => {
-    const amount = 1.2 * LAMPORTS_PER_SOL; // meio SOL para teste
+    const amount = 3 * LAMPORTS_PER_SOL; // meio SOL para teste
 
     const tx = await program.methods
       .depositSolAndMint(new anchor.BN(amount))
