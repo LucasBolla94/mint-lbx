@@ -12,7 +12,7 @@ mint_lbx = "3pMtMuxW8C9fJ5Va7sGD57zq6s1h2btucUbAgDM5EepE"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
