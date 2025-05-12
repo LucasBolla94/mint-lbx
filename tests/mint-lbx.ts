@@ -1,24 +1,49 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { MintLbx } from "../target/types/mint_lbx";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
+import {
+  PublicKey,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
+} from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  getAccount,
+} from "@solana/spl-token";
 
 describe("mint-lbx", () => {
-  // Set the Anchor provider (default from CLI config or environment)
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
   const program = anchor.workspace.mintLbx as Program<MintLbx>;
   const wallet = provider.wallet;
 
-  it("Initialize config!", async () => {
-    // Deriva a conta PDA para o Config
-    const [configPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("config")],
-      program.programId
-    );
+  const [configPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("config")],
+    program.programId
+  );
 
-    // Executa a instrução initialize_config com uma taxa de câmbio inicial de 10
+  const [vaultPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("vault")],
+    program.programId
+  );
+
+  const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("mint_authority")],
+    program.programId
+  );
+
+  const mint = new PublicKey("BYUYJErXBbZiZTBDi5hxqUEmj7JdrjEuTLmYVhpi2CUX");
+  const userTokenAccount = new PublicKey("GgnuKXCT98PPdPxRbHD7jZ9mMccTdddABrtXx9eypyLT");
+
+  it("Initialize config", async () => {
+    const configAccount = await provider.connection.getAccountInfo(configPda);
+
+    if (configAccount !== null) {
+      console.log("⚠️  Config já está inicializado, pulando...");
+      return;
+    }
+
     const tx = await program.methods
       .initializeConfig(new anchor.BN(10))
       .accounts({
@@ -26,9 +51,43 @@ describe("mint-lbx", () => {
         authority: wallet.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([]) // Nenhum signer extra além do wallet padrão
       .rpc();
 
     console.log("✅ Config initialized. Tx Signature:", tx);
+  });
+
+  it("Update exchange rate", async () => {
+    const tx = await program.methods
+      .updateExchangeRate(new anchor.BN(20))
+      .accounts({
+        config: configPda,
+        authority: wallet.publicKey,
+      })
+      .rpc();
+
+    console.log("✅ Exchange rate updated. Tx Signature:", tx);
+  });
+
+  it("Deposit SOL and mint LBX", async () => {
+    const amount = 1.2 * LAMPORTS_PER_SOL; // meio SOL para teste
+
+    const tx = await program.methods
+      .depositSolAndMint(new anchor.BN(amount))
+      .accounts({
+        user: wallet.publicKey,
+        vault: vaultPda,
+        config: configPda,
+        mintAuthority: mintAuthorityPda,
+        mint: mint,
+        userTokenAccount: userTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    console.log("✅ Deposited SOL and minted LBX. Tx Signature:", tx);
+
+    const accountInfo = await getAccount(provider.connection, userTokenAccount);
+    console.log("💰 Token balance:", accountInfo.amount.toString());
   });
 });
